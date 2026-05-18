@@ -11,8 +11,9 @@ import (
 )
 
 type state struct {
-	db  *database.Queries
-	cfg *config.Config
+	db    *database.Queries
+	rawDB *sql.DB
+	cfg   *config.Config
 }
 
 func main() {
@@ -29,15 +30,19 @@ func main() {
 	dbQueries := database.New(db)
 
 	programState := &state{
-		db:  dbQueries,
-		cfg: &cfg,
+		db:    dbQueries,
+		rawDB: db,
+		cfg:   &cfg,
 	}
 
 	cmds := commands{
 		RegisteredCommands: make(map[string]func(*state, command) error),
 	}
 
+	cmds.register("addfeed", handlerAddFeed)
+	cmds.register("agg", handlerAgg)
 	cmds.register("login", handlerLogin)
+	cmds.register("feeds", handlerGetFeeds)
 	cmds.register("register", handlerRegister)
 	cmds.register("reset", handlerReset)
 	cmds.register("users", handlerGetUsers)
