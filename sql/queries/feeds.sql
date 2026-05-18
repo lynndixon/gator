@@ -11,11 +11,11 @@ VALUES (
 )
 RETURNING *;
 
--- name: GetFeed :one
+-- name: GetFeedByURL :one 
 
 SELECT *
 FROM feeds
-WHERE name = $1;
+WHERE url = $1;
 
 -- name: DeleteFeeds :exec
 
