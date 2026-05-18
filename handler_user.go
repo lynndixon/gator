@@ -64,6 +64,27 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+func handlerGetUsers(s *state, cmd command) error {
+	names, err := s.db.GetUsers(context.Background())
+	if err != nil {
+		return fmt.Errorf("Could not retrieve names: %w", err)
+	}
+
+	if len(names) == 0 {
+		return fmt.Errorf("There are no registered users: %w", err)
+	}
+
+	for _, name := range names {
+		if name == s.cfg.CurrentUserName {
+			fmt.Printf("* %v (current)\n", name)
+			continue
+		}
+		fmt.Printf("* %v\n", name)
+	}
+
+	return nil
+}
+
 // Helper function to print the fields of a user
 func printUser(user database.User) {
 	fmt.Printf(" * ID:		%v\n", user.ID)
