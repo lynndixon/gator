@@ -7,7 +7,7 @@ RETURNING id, title;
 
 -- name: GetPostsForUser :many
 
-SELECT posts.id, posts.title, posts.url, posts.published_at
+SELECT posts.id, feeds.name AS feedname, posts.title, posts.description, posts.url, posts.published_at
 FROM posts
 JOIN feeds on posts.feed_id = feeds.id
 INNER JOIN users on feeds.user_id = users.id
