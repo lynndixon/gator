@@ -2,11 +2,8 @@ package main
 
 import (
 	"context"
-	"encoding/xml"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"time"
 
 	"github.com/google/uuid"
@@ -14,39 +11,6 @@ import (
 )
 
 const URL = "https://www.wagslane.dev/index.xml"
-
-func handlerAgg(s *state, cmd command) error {
-	client := &http.Client{
-		Timeout: 5 * time.Second,
-	}
-
-	req, err := http.NewRequest("GET", URL, nil)
-	if err != nil {
-		return fmt.Errorf("Failed to create new HTTP request: %w", err)
-	}
-
-	res, err := client.Do(req)
-	if err != nil {
-		return fmt.Errorf("HTTP error: %w", err)
-	}
-
-	defer res.Body.Close()
-
-	data, err := io.ReadAll(res.Body)
-	if err != nil {
-		return fmt.Errorf("Failed to read response body: %w", err)
-	}
-
-	var rssFeed RSSFeed
-	err = xml.Unmarshal(data, &rssFeed)
-	if err != nil {
-		return fmt.Errorf("Failed to unmarshal XML: %w", err)
-	}
-
-	fmt.Print(rssFeed, "\n")
-
-	return nil
-}
 
 func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {

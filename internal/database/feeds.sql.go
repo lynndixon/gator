@@ -16,14 +16,14 @@ const createFeed = `-- name: CreateFeed :one
 
 INSERT INTO feeds(id, created_at, updated_at, name, url, user_id)
 VALUES (
-    $1,
-    $2,
-    $3,
-    $4,
-    $5,
-    $6
+$1,
+$2,
+$3,
+$4,
+$5,
+$6
 )
-RETURNING id, created_at, updated_at, name, url, user_id
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
 `
 
 type CreateFeedParams struct {
@@ -52,6 +52,7 @@ func (q *Queries) CreateFeed(ctx context.Context, arg CreateFeedParams) (Feed, e
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }
@@ -68,7 +69,7 @@ func (q *Queries) DeleteFeeds(ctx context.Context) error {
 
 const getFeedByURL = `-- name: GetFeedByURL :one
 
-SELECT id, created_at, updated_at, name, url, user_id
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at
 FROM feeds
 WHERE url = $1
 `
@@ -83,6 +84,7 @@ func (q *Queries) GetFeedByURL(ctx context.Context, url string) (Feed, error) {
 		&i.Name,
 		&i.Url,
 		&i.UserID,
+		&i.LastFetchedAt,
 	)
 	return i, err
 }
@@ -122,4 +124,51 @@ func (q *Queries) GetFeeds(ctx context.Context) ([]GetFeedsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getNextFeedToFetch = `-- name: GetNextFeedToFetch :one
+
+SELECT id, created_at, updated_at, name, url, user_id, last_fetched_at
+FROM feeds
+ORDER BY last_fetched_at ASC NULLS FIRST
+LIMIT 1
+`
+
+func (q *Queries) GetNextFeedToFetch(ctx context.Context) (Feed, error) {
+	row := q.db.QueryRowContext(ctx, getNextFeedToFetch)
+	var i Feed
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Url,
+		&i.UserID,
+		&i.LastFetchedAt,
+	)
+	return i, err
+}
+
+const markFeedFetched = `-- name: MarkFeedFetched :one
+
+UPDATE feeds
+SET last_fetched_at = NOW(),
+updated_at = NOW()
+WHERE feeds.id = $1
+RETURNING id, created_at, updated_at, name, url, user_id, last_fetched_at
+`
+
+func (q *Queries) MarkFeedFetched(ctx context.Context, id uuid.UUID) (Feed, error) {
+	row := q.db.QueryRowContext(ctx, markFeedFetched, id)
+	var i Feed
+	err := row.Scan(
+		&i.ID,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Name,
+		&i.Url,
+		&i.UserID,
+		&i.LastFetchedAt,
+	)
+	return i, err
 }
