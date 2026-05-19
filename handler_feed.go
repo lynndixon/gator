@@ -48,12 +48,7 @@ func handlerAgg(s *state, cmd command) error {
 	return nil
 }
 
-func handlerAddFeed(s *state, cmd command) error {
-	currentUser, err := s.db.GetUser(context.Background(), s.cfg.CurrentUserName)
-	if err != nil {
-		return fmt.Errorf("could not retrieve current user: %w", err)
-	}
-
+func handlerAddFeed(s *state, cmd command, user database.User) error {
 	if len(cmd.Args) != 2 {
 		return fmt.Errorf("usage: %s <feed name> <url>\n", cmd.Name)
 	}
@@ -67,7 +62,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		UpdatedAt: time.Now().UTC(),
 		Name:      feedName,
 		Url:       feedURL,
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to create feed: %w", err)
@@ -77,7 +72,7 @@ func handlerAddFeed(s *state, cmd command) error {
 		ID:        uuid.New(),
 		CreatedAt: time.Now().UTC(),
 		UpdatedAt: time.Now().UTC(),
-		UserID:    currentUser.ID,
+		UserID:    user.ID,
 		FeedID:    feed.ID,
 	})
 	if err != nil {
@@ -113,6 +108,7 @@ func handlerGetFeeds(s *state, cmd command) error {
 		return errors.New("No feeds found in database.")
 	}
 
+	fmt.Printf("Found %d feeds:\n", len(feeds))
 	for _, feed := range feeds {
 		fmt.Printf("%v, %v, created by: %v\n", feed.Name, feed.Url, feed.User)
 	}
